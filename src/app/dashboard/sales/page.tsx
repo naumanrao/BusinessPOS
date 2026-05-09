@@ -245,11 +245,11 @@ export default function SalesPage() {
             setUploadOpen(open);
             if (!open) { setUploadFile(null); setPreviewData(null); }
           }}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+            <DialogTrigger render={<Button variant="outline" size="sm" />}>
+              <span className="flex items-center">
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Excel
-              </Button>
+              </span>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
@@ -365,7 +365,7 @@ export default function SalesPage() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1 block">Balance</Label>
-              <Select value={remainingFilter} onValueChange={(v) => { setRemainingFilter(v); setPage(1); }}>
+              <Select value={remainingFilter} onValueChange={(v) => { if (v) { setRemainingFilter(v); setPage(1); } }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
@@ -519,7 +519,7 @@ export default function SalesPage() {
                 <p className="text-sm text-muted-foreground">
                   Page {page} of {totalPages} ({total} total)
                 </p>
-                <Select value={limit.toString()} onValueChange={(v) => { setLimit(parseInt(v)); setPage(1); }}>
+                <Select value={limit.toString()} onValueChange={(v) => { if (v) { setLimit(parseInt(v)); setPage(1); } }}>
                   <SelectTrigger className="w-[110px] h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="10">10 / page</SelectItem>

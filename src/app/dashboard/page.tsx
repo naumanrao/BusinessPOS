@@ -192,7 +192,7 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
-                    formatter={(value: number) => [formatCurrency(value), ""]}
+                    formatter={(value: any) => [formatCurrency(Number(value) || 0), ""]}
                   />
                   <Bar
                     dataKey="total_sales"
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
-                    formatter={(value: number) => [formatCurrency(value), ""]}
+                    formatter={(value: any) => [formatCurrency(Number(value) || 0), ""]}
                   />
                   <defs>
                     <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">

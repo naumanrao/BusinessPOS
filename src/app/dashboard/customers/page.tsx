@@ -257,11 +257,11 @@ export default function CustomersPage() {
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+            <DialogTrigger render={<Button variant="outline" size="sm" />}>
+              <span className="flex items-center">
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Excel
-              </Button>
+              </span>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
@@ -378,11 +378,11 @@ export default function CustomersPage() {
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600">
+            <DialogTrigger render={<Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600" />}>
+              <span className="flex items-center">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Customer
-              </Button>
+              </span>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -458,7 +458,7 @@ export default function CustomersPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={limit.toString()} onValueChange={(v) => { setLimit(parseInt(v)); setPage(1); }}>
+            <Select value={limit.toString()} onValueChange={(v) => { if (v) { setLimit(parseInt(v)); setPage(1); } }}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue />
               </SelectTrigger>
