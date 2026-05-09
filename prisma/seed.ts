@@ -1,7 +1,13 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -50,7 +56,6 @@ async function main() {
 
   for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
     for (const customer of customers) {
-      // Random 1-4 sales per customer per month
       const numSales = Math.floor(Math.random() * 4) + 1;
       for (let s = 0; s < numSales; s++) {
         const date = new Date(now.getFullYear(), now.getMonth() - monthOffset, Math.floor(Math.random() * 28) + 1);
@@ -72,7 +77,6 @@ async function main() {
     }
   }
 
-  // Clear existing sales and recreate
   await prisma.sale.deleteMany();
   await prisma.sale.createMany({ data: salesData });
   console.log(`✅ ${salesData.length} sales records created`);
@@ -88,4 +92,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end(); // Important to close the pool too
   });

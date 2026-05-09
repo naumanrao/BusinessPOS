@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       const parsed = salesExcelRowSchema.safeParse(row);
 
       if (!parsed.success) {
-        const errorMessages = parsed.error.errors.map((e) => e.message).join(", ");
+        const errorMessages = parsed.error.issues.map((e) => e.message).join(", ");
         errors.push({ row: i + 2, reason: errorMessages });
         continue;
       }

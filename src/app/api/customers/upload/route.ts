@@ -51,7 +51,7 @@ export async function POST(request: Request) {
           ratePerBottle: parsed.data.RatePerBottle,
         });
       } else {
-        const errorMessages = parsed.error.errors.map((e) => e.message).join(", ");
+        const errorMessages = parsed.error.issues.map((e) => e.message).join(", ");
         errors.push({ row: index + 2, reason: errorMessages }); // +2 for 1-based + header
       }
     });
