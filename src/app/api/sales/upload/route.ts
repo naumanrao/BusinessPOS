@@ -120,6 +120,9 @@ export async function POST(request: Request) {
         });
         inserted++;
       }
+    }, {
+      maxWait: 10000,
+      timeout: 60000,
     });
 
     return NextResponse.json({

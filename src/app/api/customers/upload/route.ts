@@ -39,22 +39,66 @@ export async function POST(request: Request) {
     }
 
     // Validate rows
-    const validRows: Array<{ name: string; house: string; ratePerBottle: number }> = [];
+    const parsedRows: Array<{ rowNum: number; name: string; house: string; ratePerBottle: number }> = [];
     const errors: Array<{ row: number; reason: string }> = [];
 
     rawData.forEach((row, index) => {
       const parsed = customerExcelRowSchema.safeParse(row);
       if (parsed.success) {
-        validRows.push({
+        parsedRows.push({
+          rowNum: index + 2, // +2 for 1-based + header
           name: String(parsed.data.Name).trim(),
           house: String(parsed.data.House).trim(),
           ratePerBottle: parsed.data.RatePerBottle,
         });
       } else {
         const errorMessages = parsed.error.issues.map((e) => e.message).join(", ");
-        errors.push({ row: index + 2, reason: errorMessages }); // +2 for 1-based + header
+        errors.push({ row: index + 2, reason: errorMessages });
       }
     });
+
+    // Duplicate check on House column
+    const validRows: Array<{ name: string; house: string; ratePerBottle: number }> = [];
+    const seenHouses = new Map<string, number>();
+
+    const housesToLookup = parsedRows.map(r => r.house);
+    const existingCustomers = await prisma.customer.findMany({
+      where: { house: { in: housesToLookup } }
+    });
+    
+    const dbHouseOwnerMap = new Map<string, string>();
+    existingCustomers.forEach(c => {
+      dbHouseOwnerMap.set(c.house.toLowerCase(), c.name.toLowerCase());
+    });
+
+    for (const row of parsedRows) {
+      const houseKey = row.house.toLowerCase();
+      const nameKey = row.name.toLowerCase();
+
+      // Check file duplicates
+      if (seenHouses.has(houseKey)) {
+        errors.push({ row: row.rowNum, reason: `Duplicate House '${row.house}' found in the file (also in row ${seenHouses.get(houseKey)})` });
+        continue;
+      }
+      
+      // Check DB duplicates
+      if (dbHouseOwnerMap.has(houseKey)) {
+        const existingName = existingCustomers.find(c => c.house.toLowerCase() === houseKey)?.name;
+        if (dbHouseOwnerMap.get(houseKey) === nameKey) {
+          errors.push({ row: row.rowNum, reason: `House '${row.house}' with name '${row.name}' is already added` });
+        } else {
+          errors.push({ row: row.rowNum, reason: `House '${row.house}' already belongs to customer '${existingName}'` });
+        }
+        continue;
+      }
+
+      seenHouses.set(houseKey, row.rowNum);
+      validRows.push({
+        name: row.name,
+        house: row.house,
+        ratePerBottle: row.ratePerBottle
+      });
+    }
 
     if (action === "preview") {
       return NextResponse.json({
@@ -68,7 +112,6 @@ export async function POST(request: Request) {
 
     // Save - use transaction for bulk upsert
     let inserted = 0;
-    let updated = 0;
 
     await prisma.$transaction(async (tx) => {
       for (const row of validRows) {
@@ -76,23 +119,20 @@ export async function POST(request: Request) {
           where: { name_house: { name: row.name, house: row.house } },
         });
 
-        if (existing) {
-          await tx.customer.update({
-            where: { id: existing.id },
-            data: { ratePerBottle: row.ratePerBottle },
-          });
-          updated++;
-        } else {
+        if (!existing) {
           await tx.customer.create({ data: row });
           inserted++;
         }
       }
+    }, {
+      maxWait: 10000, // 10 seconds to wait for a connection
+      timeout: 60000, // 60 seconds for the transaction to complete
     });
 
     return NextResponse.json({
       message: "Import completed",
       inserted,
-      updated,
+      updated: 0,
       skipped: errors.length,
       errors,
     });
