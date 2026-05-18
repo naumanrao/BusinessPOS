@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const rawData = XLSX.utils.sheet_to_json(worksheet);
 
     // Validate columns
-    const requiredColumns = ["Name", "House", "Date", "Quantity", "AmountPaid"];
+    const requiredColumns = ["House", "Date", "Quantity", "AmountPaid"];
     if (rawData.length > 0) {
       const firstRow = rawData[0] as Record<string, unknown>;
       const missingColumns = requiredColumns.filter((col) => !(col in firstRow));
@@ -65,9 +65,9 @@ export async function POST(request: Request) {
       const name = String(parsed.data.Name).trim();
       const house = String(parsed.data.House).trim();
 
-      // Find matching customer
-      const customer = await prisma.customer.findUnique({
-        where: { name_house: { name, house } },
+      // Find matching customer by house since house is unique per customer
+      const customer = await prisma.customer.findFirst({
+        where: { house },
       });
 
       if (!customer) {

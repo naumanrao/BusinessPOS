@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const rawData = XLSX.utils.sheet_to_json(worksheet);
 
     // Validate columns
-    const requiredColumns = ["Name", "House", "RatePerBottle"];
+    const requiredColumns = ["House", "RatePerBottle"];
     if (rawData.length > 0) {
       const firstRow = rawData[0] as Record<string, unknown>;
       const missingColumns = requiredColumns.filter((col) => !(col in firstRow));

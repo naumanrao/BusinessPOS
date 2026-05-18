@@ -20,13 +20,13 @@ export const registerSchema = z
 
 // Customer schemas
 export const customerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.coerce.string().optional().default(""),
   house: z.string().min(1, "House is required"),
   ratePerBottle: z.coerce.number().positive("Rate must be a positive number"),
 });
 
 export const customerExcelRowSchema = z.object({
-  Name: z.string().min(1, "Name is required"),
+  Name: z.coerce.string().optional().default(""),
   House: z.string().min(1, "House is required"),
   RatePerBottle: z.coerce.number().positive("Rate must be a positive number"),
 });
@@ -46,7 +46,7 @@ export const saleUpdateSchema = z.object({
 });
 
 export const salesExcelRowSchema = z.object({
-  Name: z.string().min(1, "Name is required"),
+  Name: z.coerce.string().optional().default(""),
   House: z.string().min(1, "House is required"),
   Date: z.coerce.date(),
   Quantity: z.coerce.number().int().positive("Quantity must be positive"),
