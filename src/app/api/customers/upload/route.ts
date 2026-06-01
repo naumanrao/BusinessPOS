@@ -3,8 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import { customerExcelRowSchema } from "@/lib/validators";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function POST(request: Request) {
+  const guard = await requireAdmin();
+  if (guard) return guard;
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,7 +68,7 @@ export async function POST(request: Request) {
     const existingCustomers = await prisma.customer.findMany({
       where: { house: { in: housesToLookup } }
     });
-    
+
     const dbHouseOwnerMap = new Map<string, string>();
     existingCustomers.forEach(c => {
       dbHouseOwnerMap.set(c.house.toLowerCase(), c.name.toLowerCase());
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
         errors.push({ row: row.rowNum, reason: `Duplicate House '${row.house}' found in the file (also in row ${seenHouses.get(houseKey)})` });
         continue;
       }
-      
+
       // Check DB duplicates
       if (dbHouseOwnerMap.has(houseKey)) {
         const existingName = existingCustomers.find(c => c.house.toLowerCase() === houseKey)?.name;

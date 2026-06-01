@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Loader2, BarChart3, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +20,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "VIEWER",
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
@@ -150,6 +154,23 @@ export default function RegisterPage() {
               {errors.confirmPassword && (
                 <p className="text-red-400 text-xs">{errors.confirmPassword[0]}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-zinc-300">Account Type</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(v) => { if (v) setFormData({ ...formData, role: v }); }}
+              >
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 focus:border-emerald-500 text-white">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Admin (Full Access)</SelectItem>
+                  <SelectItem value="VIEWER">Viewer (Read Only)</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && <p className="text-red-400 text-xs">{errors.role[0]}</p>}
             </div>
 
             <Button

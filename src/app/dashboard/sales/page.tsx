@@ -33,6 +33,7 @@ interface Sale {
   totalAmount: number;
   amountPaid: number;
   remainingAmount: number;
+  runningBalance: number;
 }
 
 interface PreviewData {
@@ -216,7 +217,7 @@ export default function SalesPage() {
   };
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(val);
 
   return (
     <div className="space-y-6">
@@ -411,6 +412,7 @@ export default function SalesPage() {
                       Due <ArrowUpDown className="w-3 h-3 ml-1" />
                     </Button>
                   </TableHead>
+                  <TableHead>Balance</TableHead>
                   <TableHead className="w-24 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -418,14 +420,14 @@ export default function SalesPage() {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: 11 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : sales.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                       No sales records found
                     </TableCell>
                   </TableRow>
@@ -435,7 +437,7 @@ export default function SalesPage() {
                       <TableCell className="text-muted-foreground">{(page - 1) * limit + index + 1}</TableCell>
                       <TableCell className="font-medium">{sale.customer.name}</TableCell>
                       <TableCell><Badge variant="secondary">{sale.customer.house}</Badge></TableCell>
-                      <TableCell className="font-mono text-sm">${sale.ratePerBottle.toFixed(2)}</TableCell>
+                      <TableCell className="font-mono text-sm">PKR {sale.ratePerBottle.toFixed(2)}</TableCell>
                       {editingId === sale.id ? (
                         <>
                           <TableCell>
@@ -457,14 +459,16 @@ export default function SalesPage() {
                               className="h-8 w-24" />
                           </TableCell>
                           <TableCell>
-                            <span className={`font-mono ${
-                              (parseInt(editData.quantity || '0') * sale.ratePerBottle - parseFloat(editData.amountPaid || '0')) > 0
-                                ? 'text-red-400' : 'text-emerald-400'
-                            }`}>
+                            <span className={`font-mono ${(parseInt(editData.quantity || '0') * sale.ratePerBottle - parseFloat(editData.amountPaid || '0')) > 0
+                              ? 'text-red-400' : 'text-emerald-400'
+                              }`}>
                               {formatCurrency(
                                 parseInt(editData.quantity || '0') * sale.ratePerBottle - parseFloat(editData.amountPaid || '0')
                               )}
                             </span>
+                          </TableCell>
+                          <TableCell className="font-mono text-muted-foreground">
+                            {formatCurrency(sale.runningBalance)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -485,11 +489,17 @@ export default function SalesPage() {
                           <TableCell className="font-mono">{formatCurrency(sale.totalAmount)}</TableCell>
                           <TableCell className="font-mono">{formatCurrency(sale.amountPaid)}</TableCell>
                           <TableCell>
-                            <span className={`font-mono font-medium ${
-                              sale.remainingAmount > 0 ? 'text-red-400' :
+                            <span className={`font-mono font-medium ${sale.remainingAmount > 0 ? 'text-red-400' :
                               sale.remainingAmount < 0 ? 'text-amber-400' : 'text-emerald-400'
-                            }`}>
+                              }`}>
                               {formatCurrency(sale.remainingAmount)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-mono font-medium ${sale.runningBalance > 0 ? 'text-red-400' :
+                              sale.runningBalance < 0 ? 'text-amber-400' : 'text-emerald-400'
+                              }`}>
+                              {formatCurrency(sale.runningBalance)}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">

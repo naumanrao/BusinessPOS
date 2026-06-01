@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { saleSchema } from "@/lib/validators";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -62,8 +63,8 @@ export async function GET(request: NextRequest) {
       sortBy === "customerName"
         ? { customer: { name: sortOrder } }
         : sortBy === "house"
-        ? { customer: { house: sortOrder } }
-        : { [sortBy]: sortOrder };
+          ? { customer: { house: sortOrder } }
+          : { [sortBy]: sortOrder };
 
     const [sales, total] = await Promise.all([
       prisma.sale.findMany({
@@ -76,8 +77,33 @@ export async function GET(request: NextRequest) {
       prisma.sale.count({ where }),
     ]);
 
+    // Fetch historical sales for the customers in the current page to compute running balance chronologically
+    const customerIds = Array.from(new Set(sales.map((s) => s.customerId)));
+    const allSalesForCustomers = await prisma.sale.findMany({
+      where: { customerId: { in: customerIds } },
+      orderBy: [
+        { date: "asc" },
+        { createdAt: "asc" },
+        { id: "asc" },
+      ],
+    });
+
+    const runningBalancesMap = new Map<string, number>();
+    const customerBalances = new Map<string, number>();
+
+    for (const sale of allSalesForCustomers) {
+      const currentBalance = (customerBalances.get(sale.customerId) || 0) + sale.remainingAmount;
+      customerBalances.set(sale.customerId, currentBalance);
+      runningBalancesMap.set(sale.id, currentBalance);
+    }
+
+    const salesWithBalance = sales.map((sale) => ({
+      ...sale,
+      runningBalance: runningBalancesMap.get(sale.id) || 0,
+    }));
+
     return NextResponse.json({
-      sales,
+      sales: salesWithBalance,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -89,6 +115,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
+  const guard = await requireAdmin();
+  if (guard) return guard;
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

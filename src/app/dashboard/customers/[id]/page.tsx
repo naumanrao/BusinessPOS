@@ -21,6 +21,7 @@ interface Sale {
   totalAmount: number;
   amountPaid: number;
   remainingAmount: number;
+  runningBalance: number;
 }
 
 interface CustomerDetail {
@@ -60,7 +61,7 @@ export default function CustomerDetailPage({
   }, [id]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(val);
 
   if (loading) {
     return (
@@ -170,15 +171,14 @@ export default function CustomerDetailPage({
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>
                       <TableCell>{sale.quantity}</TableCell>
-                      <TableCell className="font-mono">${sale.ratePerBottle.toFixed(2)}</TableCell>
+                      <TableCell className="font-mono">PKR {sale.ratePerBottle.toFixed(2)}</TableCell>
                       <TableCell className="font-mono">{formatCurrency(sale.totalAmount)}</TableCell>
                       <TableCell className="font-mono">{formatCurrency(sale.amountPaid)}</TableCell>
                       <TableCell>
-                        <span className={`font-mono font-medium ${
-                          sale.remainingAmount > 0 ? 'text-red-400' :
-                          sale.remainingAmount < 0 ? 'text-amber-400' : 'text-emerald-400'
-                        }`}>
-                          {formatCurrency(sale.remainingAmount)}
+                        <span className={`font-mono font-medium ${sale.runningBalance > 0 ? 'text-red-400' :
+                          sale.runningBalance < 0 ? 'text-amber-400' : 'text-emerald-400'
+                          }`}>
+                          {formatCurrency(sale.runningBalance)}
                         </span>
                       </TableCell>
                     </TableRow>

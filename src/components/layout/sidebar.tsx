@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -30,7 +30,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-
+  const { data: session } = useSession();
+  const User = session?.user;
   const content = (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -40,7 +41,8 @@ export function Sidebar() {
         </div>
         <div>
           <h1 className="font-bold text-lg text-foreground">BizDash</h1>
-          <p className="text-xs text-muted-foreground">Business Manager</p>
+          <p className="text-md text-muted-foreground">Business Manager</p>
+          <p className="text-md text-muted-foreground">{User?.name}-{User?.role}</p>
         </div>
       </div>
 

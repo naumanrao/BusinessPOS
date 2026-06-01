@@ -18,14 +18,32 @@ export async function GET(
       where: { id },
       include: {
         sales: {
-          orderBy: { date: "desc" },
+          orderBy: [
+            { date: "asc" },
+            { createdAt: "asc" },
+            { id: "asc" }
+          ],
         },
       },
     });
 
     if (!customer) {
+      // customer not found
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
+
+    // Compute running balance chronologically in memory (sales are already fetched oldest-first)
+    let runningBalance = 0;
+    const salesWithBalance = customer.sales.map((sale) => {
+      runningBalance += sale.remainingAmount;
+      return {
+        ...sale,
+        runningBalance,
+      };
+    });
+
+    // Re-sort the sales to descending (newest-first) as the UI expects them in reverse chronological order
+    const salesWithBalanceDesc = [...salesWithBalance].reverse();
 
     // Calculate aggregates
     const totals = await prisma.sale.aggregate({
@@ -40,7 +58,10 @@ export async function GET(
     });
 
     return NextResponse.json({
-      customer,
+      customer: {
+        ...customer,
+        sales: salesWithBalanceDesc,
+      },
       totals: {
         totalSales: totals._count,
         totalQuantity: totals._sum.quantity || 0,

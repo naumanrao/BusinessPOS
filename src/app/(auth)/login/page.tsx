@@ -121,12 +121,12 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-zinc-500">
               Don&apos;t have an account?{" "}
-              <Link
+              {/* <Link
                 href="/register"
                 className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
               >
                 Create one
-              </Link>
+              </Link> */}
             </p>
           </form>
         </CardContent>

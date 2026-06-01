@@ -3,8 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import { salesExcelRowSchema } from "@/lib/validators";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function POST(request: Request) {
+  const guard = await requireAdmin();
+  if (guard) return guard;
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

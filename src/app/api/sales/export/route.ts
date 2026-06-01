@@ -60,6 +60,26 @@ export async function GET(request: NextRequest) {
       orderBy: { date: "desc" },
     });
 
+    // Fetch historical sales for the customers in the exported list to compute running balance chronologically
+    const customerIds = Array.from(new Set(sales.map((s) => s.customerId)));
+    const allSalesForCustomers = await prisma.sale.findMany({
+      where: { customerId: { in: customerIds } },
+      orderBy: [
+        { date: "asc" },
+        { createdAt: "asc" },
+        { id: "asc" },
+      ],
+    });
+
+    const runningBalancesMap = new Map<string, number>();
+    const customerBalances = new Map<string, number>();
+
+    for (const sale of allSalesForCustomers) {
+      const currentBalance = (customerBalances.get(sale.customerId) || 0) + sale.remainingAmount;
+      customerBalances.set(sale.customerId, currentBalance);
+      runningBalancesMap.set(sale.id, currentBalance);
+    }
+
     const exportData = sales.map((sale) => ({
       "Sale ID": sale.id,
       "Customer Name": sale.customer.name,
@@ -70,6 +90,7 @@ export async function GET(request: NextRequest) {
       "Total Amount": sale.totalAmount,
       "Amount Paid": sale.amountPaid,
       "Remaining Amount": sale.remainingAmount,
+      "Running Balance": runningBalancesMap.get(sale.id) || 0,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);

@@ -531,7 +531,7 @@ export default function CustomersPage() {
                         <Badge variant="secondary">{customer.house}</Badge>
                       </TableCell>
                       <TableCell className="font-mono">
-                        ${customer.ratePerBottle.toFixed(2)}
+                        PKR {customer.ratePerBottle.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(customer.createdAt).toLocaleDateString()}
