@@ -88,7 +88,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
           className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-500/10"
         >
           <LogOut className="w-5 h-5" />
