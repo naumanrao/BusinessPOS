@@ -402,8 +402,7 @@ export default function CustomersPage() {
                     id="cust-name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    placeholder="Customer name"
+                    placeholder="Customer name (optional)"
                   />
                 </div>
                 <div className="space-y-2">

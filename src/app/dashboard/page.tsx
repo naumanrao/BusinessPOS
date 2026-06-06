@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, ShoppingCart, DollarSign, TrendingUp, AlertTriangle, CalendarDays, X } from "lucide-react";
+import { Users, ShoppingCart, DollarSign, TrendingUp, AlertTriangle, CalendarDays, X, Loader2 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -80,7 +80,9 @@ export default function DashboardPage() {
     setDateTo("");
   };
 
-  if (loading) {
+  const isFirstLoad = loading && stats === null;
+
+  if (isFirstLoad) {
     return (
       <div className="space-y-8">
         <div>
@@ -174,7 +176,11 @@ export default function DashboardPage() {
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarDays className="w-4 h-4" />
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              ) : (
+                <CalendarDays className="w-4 h-4" />
+              )}
               <span className="text-sm font-medium">Filter by Date</span>
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
@@ -205,7 +211,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 transition-opacity duration-200 ${loading ? "opacity-60" : ""}`}>
         {statCards.map((card) => (
           <Card
             key={card.title}
@@ -229,7 +235,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-200 ${loading ? "opacity-60" : ""}`}>
         {/* Monthly Sales Chart */}
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader>

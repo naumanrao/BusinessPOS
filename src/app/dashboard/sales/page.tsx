@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Upload, Download, Edit, Trash2, ChevronLeft, ChevronRight,
   ArrowUpDown, FileSpreadsheet, CheckCircle, XCircle, Loader2,
-  ShoppingCart, FileDown, Save, X,
+  ShoppingCart, FileDown, Save, X, Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -76,6 +76,18 @@ export default function SalesPage() {
   // Delete state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Add sale state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addData, setAddData] = useState({
+    customerId: "",
+    date: new Date().toISOString().split("T")[0],
+    quantity: "1",
+    amountPaid: "0",
+  });
+  const [addLoading, setAddLoading] = useState(false);
+  const [allCustomers, setAllCustomers] = useState<Array<{ id: string; name: string; house: string; ratePerBottle: number }>>([]);
+  const [customerSearch, setCustomerSearch] = useState("");
 
   const fetchSales = useCallback(async () => {
     setLoading(true);
@@ -219,6 +231,74 @@ export default function SalesPage() {
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(val);
 
+  const fetchAllCustomers = async () => {
+    try {
+      const res = await fetch("/api/customers?limit=1000");
+      const data = await res.json();
+      setAllCustomers(data.customers || []);
+    } catch {
+      toast.error("Failed to fetch customers");
+    }
+  };
+
+  const handleOpenAdd = () => {
+    fetchAllCustomers();
+    setAddOpen(true);
+  };
+
+  const handleAddSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addData.customerId) {
+      toast.error("Please select a customer");
+      return;
+    }
+    setAddLoading(true);
+    try {
+      const res = await fetch("/api/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: addData.customerId,
+          date: addData.date,
+          quantity: parseInt(addData.quantity),
+          amountPaid: parseFloat(addData.amountPaid || "0"),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create sale");
+
+      toast.success("Sale record added successfully");
+      setAddOpen(false);
+      setAddData({
+        customerId: "",
+        date: new Date().toISOString().split("T")[0],
+        quantity: "1",
+        amountPaid: "0",
+      });
+      setCustomerSearch("");
+      fetchSales();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to add sale record");
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const filteredCustomers = allCustomers.filter((cust) => {
+    const searchLower = customerSearch.toLowerCase();
+    return (
+      (cust.name || "").toLowerCase().includes(searchLower) ||
+      (cust.house || "").toLowerCase().includes(searchLower)
+    );
+  });
+
+  const selectedCustomer = allCustomers.find((c) => c.id === addData.customerId);
+  const qty = parseInt(addData.quantity) || 0;
+  const rate = selectedCustomer?.ratePerBottle || 0;
+  const totalAmount = qty * rate;
+  const paid = parseFloat(addData.amountPaid) || 0;
+  const remaining = totalAmount - paid;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -231,6 +311,129 @@ export default function SalesPage() {
           <p className="text-muted-foreground mt-1">{total} total records</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Dialog open={addOpen} onOpenChange={(open) => {
+            setAddOpen(open);
+            if (!open) {
+              setAddData({
+                customerId: "",
+                date: new Date().toISOString().split("T")[0],
+                quantity: "1",
+                amountPaid: "0",
+              });
+              setCustomerSearch("");
+            }
+          }}>
+            <DialogTrigger render={<Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600" onClick={handleOpenAdd} />}>
+              <span className="flex items-center">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Sale
+              </span>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-purple-500" />
+                  Add Individual Sale Record
+                </DialogTitle>
+                <DialogDescription>
+                  Enter individual sale details for a customer.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddSale} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Search Customer</Label>
+                  <Input
+                    placeholder="Type to filter customers..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sale-customer">Customer</Label>
+                  <Select
+                    value={addData.customerId}
+                    onValueChange={(v) => {
+                      if (v) setAddData({ ...addData, customerId: v });
+                    }}
+                  >
+                    <SelectTrigger id="sale-customer" className="w-full">
+                      <SelectValue placeholder="Select customer..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">No customers found</div>
+                      ) : (
+                        filteredCustomers.map((cust) => (
+                          <SelectItem key={cust.id} value={cust.id}>
+                            {cust.name ? `${cust.name} (House ${cust.house})` : `House ${cust.house}`}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedCustomer && (
+                  <div className="bg-muted/30 border rounded-lg p-3 space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Rate Per Bottle:</span>
+                      <span className="font-mono font-medium">PKR {selectedCustomer.ratePerBottle.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 mt-1">
+                      <span className="text-muted-foreground">Total Amount:</span>
+                      <span className="font-mono font-semibold text-foreground">PKR {totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2 mt-1">
+                      <span className="text-muted-foreground">Remaining (Due):</span>
+                      <span className={`font-mono font-semibold ${remaining > 0 ? "text-red-400" : remaining < 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                        PKR {remaining.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="sale-date">Date</Label>
+                  <Input
+                    id="sale-date"
+                    type="date"
+                    value={addData.date}
+                    onChange={(e) => setAddData({ ...addData, date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sale-qty">Quantity</Label>
+                  <Input
+                    id="sale-qty"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={addData.quantity}
+                    onChange={(e) => setAddData({ ...addData, quantity: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sale-paid">Amount Paid</Label>
+                  <Input
+                    id="sale-paid"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={addData.amountPaid}
+                    onChange={(e) => setAddData({ ...addData, amountPaid: e.target.value })}
+                    required
+                  />
+                </div>
+                <DialogFooter className="pt-2">
+                  <Button type="submit" disabled={addLoading} className="w-full">
+                    {addLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Create Sale Record
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <Button variant="outline" size="sm" onClick={handleExport}>
             <FileDown className="w-4 h-4 mr-2" />
             Export
