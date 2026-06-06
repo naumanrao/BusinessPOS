@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
           totalAmount: true,
           amountPaid: true,
           remainingAmount: true,
+          quantity: true,
         },
       }),
     ]);
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
     const totalRevenue = salesAggregates._sum.totalAmount || 0;
     const totalPaid = salesAggregates._sum.amountPaid || 0;
     const totalRemaining = salesAggregates._sum.remainingAmount || 0;
+    const totalBottles = salesAggregates._sum.quantity || 0;
 
     // Get monthly sales data
     // If date filter is provided, use it; otherwise default to last 12 months
@@ -95,6 +97,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       totalCustomers,
       totalSales,
+      totalBottles,
       totalRevenue,
       totalPaid,
       totalRemaining,

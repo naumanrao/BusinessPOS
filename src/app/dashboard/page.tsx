@@ -22,6 +22,7 @@ import {
 interface DashboardStats {
   totalCustomers: number;
   totalSales: number;
+  totalBottles: number;
   totalRevenue: number;
   totalPaid: number;
   totalRemaining: number;
@@ -126,8 +127,8 @@ export default function DashboardPage() {
       shadow: "shadow-blue-500/20",
     },
     {
-      title: "Total Sales",
-      value: stats?.totalSales || 0,
+      title: "Total Bottles",
+      value: stats?.totalBottles || 0,
       icon: ShoppingCart,
       gradient: "from-purple-500 to-pink-500",
       shadow: "shadow-purple-500/20",

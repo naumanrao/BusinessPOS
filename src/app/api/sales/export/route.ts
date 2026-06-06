@@ -80,17 +80,48 @@ export async function GET(request: NextRequest) {
       runningBalancesMap.set(sale.id, currentBalance);
     }
 
-    const exportData = sales.map((sale) => ({
-      "Sale ID": sale.id,
-      "Customer Name": sale.customer.name,
-      House: sale.customer.house,
-      "Rate Per Bottle": sale.ratePerBottle,
-      Date: new Date(sale.date).toLocaleDateString(),
-      Quantity: sale.quantity,
-      "Total Amount": sale.totalAmount,
-      "Amount Paid": sale.amountPaid,
-      "Remaining Amount": sale.remainingAmount,
-      "Running Balance": runningBalancesMap.get(sale.id) || 0,
+    // Group sales by customerId
+    const customerGroup = new Map<string, {
+      customerId: string;
+      name: string;
+      house: string;
+      ratePerBottle: number;
+      totalQuantity: number;
+      totalAmount: number;
+      totalPaid: number;
+      totalRemaining: number;
+    }>();
+
+    for (const sale of sales) {
+      const existing = customerGroup.get(sale.customerId);
+      if (existing) {
+        existing.totalQuantity += sale.quantity;
+        existing.totalAmount += sale.totalAmount;
+        existing.totalPaid += sale.amountPaid;
+        existing.totalRemaining += sale.remainingAmount;
+      } else {
+        customerGroup.set(sale.customerId, {
+          customerId: sale.customerId,
+          name: sale.customer.name,
+          house: sale.customer.house,
+          ratePerBottle: sale.ratePerBottle,
+          totalQuantity: sale.quantity,
+          totalAmount: sale.totalAmount,
+          totalPaid: sale.amountPaid,
+          totalRemaining: sale.remainingAmount,
+        });
+      }
+    }
+
+    const exportData = Array.from(customerGroup.values()).map((g) => ({
+      "Customer Name": g.name,
+      House: g.house,
+      "Rate Per Bottle": g.ratePerBottle,
+      "Total Quantity": g.totalQuantity,
+      "Total Amount": g.totalAmount,
+      "Total Amount Paid": g.totalPaid,
+      "Total Remaining Amount": g.totalRemaining,
+      "Final Running Balance": customerBalances.get(g.customerId) || 0,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
